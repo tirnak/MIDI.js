@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns = "http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<!-- polyfill -->
+	<script src="../inc/shim/Base64.js" type="text/javascript"></script>
+	<script src="../inc/shim/Base64binary.js" type="text/javascript"></script>
+	<script src="../inc/shim/WebAudioAPI.js" type="text/javascript"></script>
+	<!-- midi.js package -->
+	<script src="../js/midi/audioDetect.js" type="text/javascript"></script>
+	<script src="../js/midi/gm.js" type="text/javascript"></script>
+	<script src="../js/midi/loader.js" type="text/javascript"></script>
+	<script src="../js/midi/plugin.audiotag.js" type="text/javascript"></script>
+	<script src="../js/midi/plugin.webaudio.js" type="text/javascript"></script>
+	<script src="../js/midi/plugin.webmidi.js" type="text/javascript"></script>
+	<!-- utils -->
+	<script src="../js/util/dom_request_xhr.js" type="text/javascript"></script>
+	<script src="../js/util/dom_request_script.js" type="text/javascript"></script>
+</head>
+<body>
+<script type="text/javascript">
+
+window.onload = function () {
+	MIDI.loadPlugin({
+		soundfontUrl: "./soundfont/",
+		instrument: "acoustic_grand_piano",
+		onprogress: function(state, progress) {
+			console.log(state, progress);
+		},
+		onsuccess: function() {
+			play();
+		}
+	});
+};
+
+var keys = {
+    4 : {
+        C : 1,
+        D : 1,
+        F : 1,
+        G : 1
+    }
+};
+
+var player = {
+    barDuration : 8,
+    timeline : 0,
+    velocity : 127,
+    key : keys[4],
+    tempAlts : {},
+    play : function(noteString, duration, moveTime) {
+        var noteInt = this.calcNote(noteString);
+
+        MIDI.noteOn(0, noteInt, this.velocity, this.timeline);
+        MIDI.noteOff(0, noteInt, this.velocity, this.timeline + this.barDuration * duration);
+
+        if (typeof moveTime !== 'undefined' && moveTime === true) {
+            this.move(duration);
+        }
+    },
+    move : function(duration) {
+        this.timeline += this.barDuration * duration;
+        if (this.isEndOfBar()) {
+            this.tempAlts = {};}
+    },
+    calcNote : function(noteString) {
+        var note = noteString[0];
+        var noteWithOctave = noteString.substring(0,2);
+        var altering = this.getAltering(noteString);
+        // set altering
+        if (altering) {
+            this.setTempAltering(noteWithOctave, altering);
+        }
+        // if temporary altering is set - start keys shouldn't be applied
+        if (this.tempAlts[noteWithOctave] !== undefined) {
+            return MIDI.keyToNote[noteWithOctave] + this.tempAlts[noteWithOctave];
+        }
+        return MIDI.keyToNote[noteWithOctave] +
+                (this.key[note] !== undefined ? this.key[note] : 0);
+    },
+    isEndOfBar : function() {
+        return !!(this.timeline % this.barDuration === 0)
+    },
+    getAltering : function(noteString) {
+        var altering = noteString[2];
+        return altering !== undefined ? altering : false;
+    },
+    setTempAltering : function(noteWithOctave, altering) {
+        switch (altering) {
+            case 'b': this.tempAlts[noteWithOctave] = -1; break;
+            case '%': this.tempAlts[noteWithOctave] = 0;  break;
+            case '#': this.tempAlts[noteWithOctave] = 1;  break;
+        }
+    }
+}
+
+function play() {
+	MIDI.setVolume(0, 80);
+	// first bar
+    player.play('C2', 1);
+    player.play('C1', 1);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+
+    // second bar
+    player.play('B1', 1);
+    player.play('B2', 1);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+
+	// third bar
+    player.play('A1', 1/2);
+    player.play('A2', 1/2);
+    player.play('A3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+    player.play('A3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+
+    player.play('F1', 1/2);
+    player.play('F2', 1/2);
+    player.play('A3', 1/12, true);
+    player.play('D4%', 1/12, true);
+    player.play('F4', 1/12, true);
+    player.play('A3', 1/12, true);
+    player.play('D4', 1/12, true);
+    player.play('F4', 1/12, true);
+
+    // fourth bar
+    player.play('G1', 1/2);
+    player.play('G2', 1/2);
+    player.play('G3', 1/12, true);
+    player.play('B3#', 1/12, true);
+    player.play('F4', 1/12, true);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+
+    player.play('G1', 1/2);
+    player.play('G2', 1/2);
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('D4#', 1/12, true);
+    player.play('F3', 1/12, true);
+    player.play('B3', 1/12, true);
+    player.play('D4', 1/12, true);
+
+    // fifth bar
+    player.play('G2', 1);
+    player.play('C2', 1);
+    player.play('C3', 1);
+    player.play('E3', 2/25, true);
+    player.play('G3', 2/25, true);
+    player.play('C4', 2/25, true);
+    player.play('G3', 2/25, true);
+    player.play('C4', 2/25, true);
+    player.play('E4', 2/25, true);
+
+    player.play('G3', 2/25, true);
+    player.play('C4', 2/25, true);
+    player.play('E4', 2/25, true);
+
+    player.play('G4', 2/25);
+    player.play('G3', 2/25, true);
+    player.play('C4', 2/25, true);
+    player.play('E4', 2/25, true);
+    player.play('G4', 1/25, true);
+
+    // sixth bar
+
+    player.play('B1#', 1);
+    player.play('G2', 1);
+    player.play('B2#', 1);
+    player.play('G4', 12/25);
+    player.play('G3', 2/25, true);
+    player.play('D4', 2/25, true);
+    player.play('F3', 2/25, true);
+
+    player.play('G3', 2/25, true);
+    player.play('D4', 2/25, true);
+    player.play('F3', 2/25, true);
+
+    player.play('G3', 2/25, true);
+    player.play('D4', 2/25, true);
+    player.play('F3', 2/25, true);
+
+    player.play('G4', 2/25);
+    player.play('G3', 2/25, true);
+    player.play('D4', 2/25, true);
+    player.play('F3', 2/25, true);
+    player.play('G4', 1/25, true);
+
+    // seventh bar
+    player.play('C2', 1/2);
+    player.play('C3', 1/2);
+    player.play('G3', 1/12);
+    player.play('G4', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+
+    player.play('G3', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('E4', 1/12, true);
+
+    player.play('F1', 1/2);
+    player.play('F2', 1/2);
+    player.play('A3', 1/12);
+    player.play('A4', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('F4', 1/12, true);
+
+    player.play('A3', 1/12);
+    player.play('A4', 1/12, true);
+    player.play('C4', 1/12, true);
+    player.play('F4', 1/12, true);
+
+}
+
+
+</script>
+</body>
+</html>
